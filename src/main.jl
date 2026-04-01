@@ -2,27 +2,36 @@ include("utils.jl")
 include("algorithm/declat.jl")
 
 function main()
-    if length(ARGS) < 2
-        println("Cách chạy: julia src/main.jl <đường_dẫn_file> <minsup>")
+    opts = parse_cli(ARGS)
+
+    if !haskey(opts, "--input") || !haskey(opts, "--minsup")
+        println("Usage:")
+        println("  julia --project src/main.jl --input data/toy/test.txt --minsup 2 [--output out.txt] [--mode baseline|optimized]")
         return
     end
-    
-    filepath = ARGS[1]
-    minsup = parse(Int, ARGS[2])
-    
-    println("Đang đọc dữ liệu từ: ", filepath)
-    transactions = read_spmf(filepath)
-    println("Tổng số giao dịch: ", length(transactions))
-    
-    println("Đang chạy dEclat với minsup = ", minsup)
-    
-    @time freq_items = run_declat(transactions, minsup)
-    
-    println("\n=== KẾT QUẢ ===")
-    println("Tìm thấy $(length(freq_items)) tập phổ biến.")
-    println("5 kết quả đầu tiên:")
-    for item in first(freq_items, 5)
-        println("Itemset: ", join(item.items, " "), " | Support: ", item.support)
+
+    input_path = opts["--input"]
+    minsup = parse(Int, opts["--minsup"])
+    output_path = get(opts, "--output", "declat_output.txt")
+    mode = Symbol(get(opts, "--mode", "optimized"))
+
+    transactions = read_spmf(input_path)
+    println("Input: ", input_path)
+    println("Transactions: ", length(transactions))
+    println("Minsup: ", minsup)
+    println("Mode: ", mode)
+
+    freq_items = @timed run_declat(transactions, minsup; mode=mode)
+    result = freq_items.value
+
+    write_spmf_itemsets(output_path, result)
+
+    println("Frequent itemsets: ", length(result))
+    println("Elapsed: ", round(freq_items.time, digits=6), " seconds")
+    println("Output written to: ", output_path)
+
+    for fi in Iterators.take(result, 10)
+        println(join(fi.items, " "), " #SUP: ", fi.support)
     end
 end
 
