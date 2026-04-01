@@ -1,0 +1,3 @@
+dataset,minsup,optimized_ms,baseline_ms,optimized_count,baseline_count
+chess,2000,0.022699999999999998,0.0214,0,0
+chess,1500,0.028,0.0148,0,0

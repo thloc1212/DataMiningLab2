@@ -15,12 +15,16 @@ function main()
     output_path = get(opts, "--output", "declat_output.txt")
     mode = Symbol(get(opts, "--mode", "optimized"))
 
+    # Pre-allocate memory hint for large datasets
+    println("Loading input: ", input_path)
     transactions = read_spmf(input_path)
     println("Input: ", input_path)
     println("Transactions: ", length(transactions))
     println("Minsup: ", minsup)
     println("Mode: ", mode)
 
+    # Add memory hint and time the execution
+    GC.gc()  # Force garbage collection before mining
     freq_items = @timed run_declat(transactions, minsup; mode=mode)
     result = freq_items.value
 

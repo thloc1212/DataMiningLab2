@@ -65,6 +65,7 @@ function mine_declat!(
         push!(output, xi)
 
         children = Vector{VerticalItem{D}}()
+        children_count = 0
 
         for j in (i + 1):n
             xj = prefix_classes[j]
@@ -73,12 +74,17 @@ function mine_declat!(
             new_support = support_from_parent(xi.support, new_diff)
 
             if new_support >= minsup
-                new_items = [xi.items; xj.items[end]]
+                # Reuse items vector instead of creating new one
+                new_items = copy(xi.items)
+                push!(new_items, xj.items[end])
                 push!(children, VerticalItem{D}(new_items, new_diff, new_support))
+                children_count += 1
             end
         end
 
-        !isempty(children) && mine_declat!(children, minsup, output)
+        if children_count > 0
+            mine_declat!(children, minsup, output)
+        end
     end
 
     return output
