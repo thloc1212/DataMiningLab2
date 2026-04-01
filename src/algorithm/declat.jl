@@ -6,12 +6,14 @@ diff_length(d::SetDiffRep) = length(d.data)
 diff_length(d::BitDiffRep) = count(d.data)
 
 function diff_minus(a::SetDiffRep, b::SetDiffRep)
-    return SetDiffRep(setdiff(a.data, b.data))
+    return SetDiffRep(setdiff(a.data, b.data)) # dùng setdiff của Julia 
 end
 
 function diff_minus(a::BitDiffRep, b::BitDiffRep)
-    return BitDiffRep(a.data .& .!b.data)
+    return BitDiffRep(a.data .& .!b.data) # dùng công thức bitvector luon
 end
+
+# tạo những tập diffset ban đầu cho mỗi item đơn lẻ, dựa trên transaction ID chứa item đó
 
 function singleton_diffset(::Type{SetDiffRep}, present_tids::Vector{Int}, total_trans::Int)
     all_tids = Set(1:total_trans)
