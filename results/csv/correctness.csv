@@ -1,2 +1,4 @@
-dataset,minsup,my_count,ref_count,matched,ratio
-chess,1500,0,0,0,1.0
+dataset,minsup,optimized_count,baseline_count,matched,ratio
+retail,2000,45,45,45,1.0
+chess,1500,2076329,2076329,2076329,1.0
+mushroom,3000,1035,1035,1035,1.0

@@ -10,14 +10,29 @@ function diff_minus(a::SetDiffRep, b::SetDiffRep)
 end
 
 function diff_minus(a::BitDiffRep, b::BitDiffRep)
-    return BitDiffRep(a.data .& .!b.data) # dùng công thức bitvector luon
+    n = length(a.data)
+    result = BitVector(undef, n)
+
+    @inbounds for i in 1:n
+        result[i] = a.data[i] & !b.data[i]
+    end
+
+    return BitDiffRep(result)
 end
 
 # tạo những tập diffset ban đầu cho mỗi item đơn lẻ, dựa trên transaction ID chứa item đó
 
 function singleton_diffset(::Type{SetDiffRep}, present_tids::Vector{Int}, total_trans::Int)
-    all_tids = Set(1:total_trans)
-    return SetDiffRep(setdiff(all_tids, Set(present_tids)))
+    present = Set(present_tids)
+    diff = Set{Int}()
+
+    for tid in 1:total_trans
+        if !(tid in present)
+            push!(diff, tid)
+        end
+    end
+
+    return SetDiffRep(diff)
 end
 
 function singleton_diffset(::Type{BitDiffRep}, present_tids::Vector{Int}, total_trans::Int)
@@ -42,7 +57,10 @@ function build_initial_classes(transactions::Vector{Vector{Int}}, minsup::Int, :
     end
 
     classes = Vector{VerticalItem{D}}()
-    for item in sort(collect(keys(tidlists)))
+    items = collect(keys(tidlists))
+    sort!(items)
+
+    for item in items
         supp = length(tidlists[item])
         supp < minsup && continue
         diff = singleton_diffset(D, tidlists[item], length(transactions))
@@ -54,36 +72,47 @@ function build_initial_classes(transactions::Vector{Vector{Int}}, minsup::Int, :
 end
 
 function mine_declat!(
-    prefix_classes::Vector{VerticalItem{D}},
+    prefix_classes::AbstractVector{VerticalItem{D}},
     minsup::Int,
     output::Vector{VerticalItem{D}}
 ) where {D<:AbstractDiffRep}
 
     n = length(prefix_classes)
     for i in 1:n
-        xi = prefix_classes[i]
+        @inbounds xi = prefix_classes[i]
         push!(output, xi)
 
-        children = Vector{VerticalItem{D}}()
+        xi_support = xi.support
+        xi_diffset = xi.diffset
+        xi_items = xi.items
+        xi_items_len = length(xi_items)
+
+        max_children = n - i
+        children = Vector{VerticalItem{D}}(undef, max_children)
         children_count = 0
 
-        for j in (i + 1):n
+        @inbounds for j in (i + 1):n
             xj = prefix_classes[j]
 
-            new_diff = diff_minus(xj.diffset, xi.diffset)
-            new_support = support_from_parent(xi.support, new_diff)
+            new_diff = diff_minus(xj.diffset, xi_diffset)
+            new_support = xi_support - diff_length(new_diff)
 
             if new_support >= minsup
-                # Reuse items vector instead of creating new one
-                new_items = copy(xi.items)
-                push!(new_items, xj.items[end])
-                push!(children, VerticalItem{D}(new_items, new_diff, new_support))
+                new_items = Vector{Int}(undef, xi_items_len + 1)
+
+                copyto!(new_items, 1, xi_items, 1, xi_items_len)
+                new_items[xi_items_len + 1] = xj.items[end]
                 children_count += 1
+                children[children_count] = VerticalItem{D}(new_items, new_diff, new_support)
             end
         end
 
         if children_count > 0
-            mine_declat!(children, minsup, output)
+            if children_count == max_children
+                mine_declat!(children, minsup, output)
+            else
+                mine_declat!(view(children, 1:children_count), minsup, output)
+            end
         end
     end
 
