@@ -118,8 +118,8 @@ function write_association_rules(filepath::String, rules::Vector{AssociationRule
         for r in rules
             println(
                 io,
-                "{", join(r.lhs, " "), "} => {", join(r.rhs, " "),
-                "} #SUP_ABS: ", r.support_abs,
+                join(r.lhs, " "), " => ", join(r.rhs, " "),
+                " #SUP_ABS: ", r.support_abs,
                 " #SUP: ", round(r.support_rel, digits=6),
                 " #CONF: ", round(r.confidence, digits=6),
                 " #LIFT: ", round(r.lift, digits=6)
