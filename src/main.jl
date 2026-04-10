@@ -7,12 +7,13 @@ function main()
 
     if !haskey(opts, "--input") || !haskey(opts, "--minsup")
         println("Usage:")
-        println("  julia --project src/main.jl --input data/toy/test.txt --minsup 2 [--output out.txt] [--mode baseline|optimized]")
+        println("  julia --project src/main.jl --input data/toy/test.txt --minsup 2 [--output out.txt] --minconf 0.6 [--mode baseline|optimized]")
         return
     end
 
     input_path = opts["--input"]
     minsup = parse(Int, opts["--minsup"])
+    minconfident = parse(Float64, opts["--minconf"])
     output_path = get(opts, "--output", "declat_output.txt")
     mode = Symbol(get(opts, "--mode", "optimized"))
 
@@ -22,6 +23,7 @@ function main()
     println("Input: ", input_path)
     println("Transactions: ", length(transactions))
     println("Minsup: ", minsup)
+    println("Minconf:", minconfident)
     println("Mode: ", mode)
 
     # Add memory hint and time the execution
@@ -39,7 +41,7 @@ function main()
         println(join(fi.items, " "), " #SUP: ", fi.support)
     end
 
-    rules = mine_association_rules(result, length(transactions), minconf=0.6)
+    rules = mine_association_rules(result, length(transactions), minconf=minconfident)
     write_association_rules("output_rules.txt", rules)
 
     top_10_rules = rules[1:min(10, length(rules))]
