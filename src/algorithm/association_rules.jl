@@ -1,4 +1,4 @@
-include("structures.jl")
+include("../structures.jl")
 
 struct AssociationRule
     lhs::Vector{Int}
@@ -76,7 +76,6 @@ function generate_association_rules(freq_itemsets, n_transactions::Int; minconf:
             supp_x_abs = get(support_map, itemset_key(lhs), 0)
             supp_y_abs = get(support_map, itemset_key(rhs), 0)
 
-            # về lý thuyết thì lhs và rhs đều phải có trong frequent map
             if supp_x_abs == 0 || supp_y_abs == 0
                 continue
             end

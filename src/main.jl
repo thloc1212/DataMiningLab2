@@ -1,6 +1,6 @@
 include("utils.jl")
 include("algorithm/declat.jl")
-include("association_rules.jl")
+include("algorithm/association_rules.jl")
 
 function main()
     opts = parse_cli(ARGS)
@@ -39,14 +39,18 @@ function main()
         println(join(fi.items, " "), " #SUP: ", fi.support)
     end
 
-    rules = mine_association_rules(result, length(freq_items), minconf=0.6, topk=10)
-    for r in rules
-    println("{", join(r.lhs, ", "), "} => {", join(r.rhs, ", "),
+    rules = mine_association_rules(result, length(transactions), minconf=0.6)
+    write_association_rules("output_rules.txt", rules)
+
+    top_10_rules = rules[1:min(10, length(rules))]
+    write_association_rules("output_10_rules.txt", top_10_rules)
+
+    for r in top_10_rules
+        println("{", join(r.lhs, ", "), "} => {", join(r.rhs, ", "),
             "} | supp=", round(r.support_rel, digits=4),
             " conf=", round(r.confidence, digits=4),
             " lift=", round(r.lift, digits=4))
-end
-
+    end
 end
 
 main()
